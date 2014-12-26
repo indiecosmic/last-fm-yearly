@@ -13,18 +13,7 @@
     var requestQueue = [];
 
     // Tasks
-    function GetAlbumInfoTask(mbid, callback) {
-        this.taskname = 'GetAlbumInfoTask';
-        this.mbid = mbid;
-        this.callback = callback;
-
-        this.run = function () {
-            lastFmApi.getAlbumInfo(this.mbid, this.callback);
-        }
-    }
-
     function GetTopAlbumsTask(page, callback) {
-        this.taskname = 'GetTopAlbumsTask';
         this.page = page;
         this.callback = callback;
 
@@ -33,26 +22,34 @@
         };
     }
 
-    function SpotifySearchTask(artist, album, callback) {
-        this.taskname = 'SpotifySearchTask';
+    function SpotifySearchTask(artist, album, rank, callback) {
+        this.rank = rank;
         this.artist = artist;
         this.album = album;
         this.callback = callback;
 
         this.run = function () {
             spotifyApi.searchAlbums('artist:' + this.artist + ' album:' + this.album, {market: 'SE', year: 2014})
-                .then(this.callback);
+                .then(function (data) {
+                    callback(data, rank);
+                }, function (err) {
+                    console.log(err);
+                });
         };
     }
 
-    function SpotifyLookupTask(id, callback) {
-        this.taskname = 'SpotifyLookupTask';
+    function SpotifyLookupTask(id, rank, callback) {
+        this.rank = rank;
         this.id = id;
         this.callback = callback;
 
         this.run = function () {
             spotifyApi.getAlbum(this.id)
-                .then(this.callback);
+                .then(function (data) {
+                    callback(data, rank);
+                }, function (err) {
+                    console.log(err);
+                });
         }
     }
 
@@ -69,9 +66,9 @@
     function onPageFetched(data) {
         page++;
         $.each(data.topalbums.album, function (index, album) {
-            requestQueue.push(new SpotifySearchTask(album.artist.name, album.name, onAlbumSearched));
-            //else
-            //    requestQueue.push(new GetAlbumInfoTask(album.mbid, onAlbumFetched));
+            requestQueue.push(new SpotifySearchTask(album.artist.name, album.name, album['@attr'].rank, onAlbumSearched));
+
+            $("#status").text("Filtering albums released in 2014.");
         });
 
         if (albums.length == 20) {
@@ -94,13 +91,20 @@
         }
     }
 
-    function onAlbumFetched(data) {
-        var date = new Date(data.album.releasedate);
-
-        if (date.getFullYear() == 2014) {
-            if (albums.length < albumCount) {
-                albums.push(data.album);
-                onProgressUpdate(albums.length);
+    function onAlbumSearched(data, rank) {
+        if (data.albums.total == 1) {
+            if (data.albums.items[0].album_type == "album")
+                requestQueue.unshift(new SpotifyLookupTask(data.albums.items[0].id, rank, onAlbumLookedup));
+        } else if (data.albums.total > 1) {
+            var task = null;
+            for (var i = 0; i < data.albums.items.length; i++) {
+                if (data.albums.items[i].album_type == "album") {
+                    task = new SpotifyLookupTask(data.albums.items[i].id, rank, onAlbumLookedup);
+                    break;
+                }
+            }
+            if (task) {
+                requestQueue.unshift(task);
             }
         }
 
@@ -124,42 +128,14 @@
         }
     }
 
-    function onAlbumSearched(data) {
-        if (data.albums.total == 1) {
-            requestQueue.unshift(new SpotifyLookupTask(data.albums.items[0].id, onAlbumLookedup));
-        } else if (data.albums.total > 1) {
-            console.log("Warning: Found more than one match.");
-            console.log(data.albums);
-            requestQueue.unshift(new SpotifyLookupTask(data.albums.items[0].id, onAlbumLookedup));
-        }
-
-        if (albums.length == 20) {
-            onComplete(albums);
-            return;
-        }
-
-        if (requestQueue.length == 0 && page < pageLimit) {
-            requestQueue.push(new GetTopAlbumsTask(page, onPageFetched));
-        }
-
-        if (requestQueue.length > 0) {
-            runQueue();
-            return;
-        }
-
-        if (page == pageLimit) {
-            onComplete(albums);
-            return;
-        }
-    }
-
-    function onAlbumLookedup(data) {
+    function onAlbumLookedup(data, rank) {
         var releaseDate = new Date(data.release_date);
         if (releaseDate.getFullYear() == 2014 && data.album_type == "album") {
 
             if (albums.length < albumCount) {
                 albums.push(data);
                 onProgressUpdate(albums.length);
+                onAlbumAdded(data.name, data.artists[0].name);
             }
         }
 
@@ -183,8 +159,13 @@
         }
     }
 
-    function saveResults(username, albums) {
+    function onAlbumAdded(name, artist) {
+        var $albumTag = $('<li />');
+        $albumTag.attr('data-artist', artist);
+        $albumTag.attr('data-album', name);
+        $albumTag.text(artist + " - " + name);
 
+        $("#analysis ul").append($albumTag);
     }
 
     app.getTopAlbums = function (username, count, callback, update) {
@@ -201,6 +182,8 @@
         if (albums.length < albumCount || username != user) {
             user = username;
             albums = [];
+
+            $("#status").text("Finding top albums for " + username + ".");
 
             lastFmApi.getTopAlbums(user, page, onPageFetched);
         } else {
@@ -223,6 +206,8 @@
                     $("input").prop('disabled', true);
                     $("button").prop('disabled', true);
                     $("button").text("Please wait...");
+                    $("button").addClass('hidden');
+                    $("input").addClass('hidden');
 
                     app.getTopAlbums(username, 20, function (result) {
 
@@ -235,6 +220,7 @@
                         });
 
                         $("form").addClass('hidden');
+                        $("#analysis").addClass('hidden');
 
                     }, function (progress) {
                         $(".progress-bar").attr('style', 'width:' + (progress / 20) * 100 + '%;');
@@ -245,10 +231,13 @@
                     $("div.alert").removeClass('hidden');
                     $("div.alert").addClass('in');
                 }
-
             });
         });
     });
 
-}(window.app = window.app || {}, jQuery));
+}
+
+(window.app = window.app || {}, jQuery)
+)
+;
 

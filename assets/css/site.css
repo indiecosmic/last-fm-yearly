@@ -167,3 +167,9 @@ body {
     display: inline-block;
     margin-top: 10px;
 }
+
+#analysis ul {
+    padding: 0;
+    display: inline-block;
+    list-style-type: none;
+}
