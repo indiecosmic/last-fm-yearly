@@ -7,6 +7,7 @@
     var albumCount = 20;
     var page = 1;
     var pageLimit = 15;
+    var year = 2015;
 
     var onComplete;
     var onProgressUpdate;
@@ -29,7 +30,7 @@
         this.callback = callback;
 
         this.run = function () {
-            spotifyApi.searchAlbums('artist:' + this.artist + ' album:' + this.album, {market: 'SE', year: 2014})
+            spotifyApi.searchAlbums('artist:' + this.artist + ' album:' + this.album, {market: 'SE', year: year})
                 .then(function (data) {
                     callback(data, rank);
                 }, function (err) {
@@ -68,7 +69,7 @@
         $.each(data.topalbums.album, function (index, album) {
             requestQueue.push(new SpotifySearchTask(album.artist.name, album.name, album['@attr'].rank, onAlbumSearched));
 
-            $("#status").text("Filtering albums released in 2014.");
+            $("#status").text("Finding albums released in " + year + ".");
         });
 
         if (albums.length == 20) {
@@ -130,7 +131,7 @@
 
     function onAlbumLookedup(data, rank) {
         var releaseDate = new Date(data.release_date);
-        if (releaseDate.getFullYear() == 2014 && data.album_type == "album") {
+        if (releaseDate.getFullYear() == year && data.album_type == "album") {
 
             if (albums.length < albumCount) {
                 albums.push(data);

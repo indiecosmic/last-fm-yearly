@@ -40,7 +40,7 @@
 
                 <form name="usernameForm">
 
-                    <h1 class="cover-heading">2014 Top 20 Albums</h1>
+                    <h1 class="cover-heading">2015 Top 20 Albums</h1>
 
                     <p class="lead">
                         <input type="text" class="form-control" placeholder="Last.fm username"/>
