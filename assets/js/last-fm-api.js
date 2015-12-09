@@ -74,6 +74,14 @@ var LastFmApi = (function ($) {
             });
     };
     module.getUserInfo = function (username, callback) {
+
+        var usernameRegex = /^[a-zA-Z0-9]+$/;
+        if (username.match(usernameRegex) == null) {
+            if (typeof callback == "function")
+                callback({ message: "Invalid username" });
+            return;
+        }
+
         $.ajax({
             url: baseUri,
             data: {
