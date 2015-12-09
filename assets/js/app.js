@@ -8,6 +8,8 @@
     var page = 1;
     var pageLimit = 15;
     var year = 2015;
+    var includeEps = false;
+    var includeSingles = false;
 
     var onComplete;
     var onProgressUpdate;
@@ -94,12 +96,12 @@
 
     function onAlbumSearched(data, rank) {
         if (data.albums.total == 1) {
-            if (data.albums.items[0].album_type == "album")
+            if (includeSingles || includeEps || data.albums.items[0].album_type == "album")
                 requestQueue.unshift(new SpotifyLookupTask(data.albums.items[0].id, rank, onAlbumLookedup));
         } else if (data.albums.total > 1) {
             var task = null;
             for (var i = 0; i < data.albums.items.length; i++) {
-                if (data.albums.items[i].album_type == "album") {
+                if (includeSingles || includeEps || data.albums.items[i].album_type == "album") {
                     task = new SpotifyLookupTask(data.albums.items[i].id, rank, onAlbumLookedup);
                     break;
                 }
@@ -129,9 +131,22 @@
         }
     }
 
+    function isMatch(data) {
+        var releaseDate = new Date(data.release_date);
+        if (releaseDate.getFullYear() != year)
+            return false;
+        if (data.album_type == "album")
+            return true;
+        if (data.album_type == "single" && includeSingles)
+            return true;
+        if (data.album_type == "single" && includeEps && data.tracks.total >= 4)
+            return true;
+        return false;
+    }
+
     function onAlbumLookedup(data, rank) {
         var releaseDate = new Date(data.release_date);
-        if (releaseDate.getFullYear() == year && data.album_type == "album") {
+        if (isMatch(data)) {
 
             if (albums.length < albumCount) {
                 albums.push(data);
@@ -196,7 +211,9 @@
         $("form").submit(function (event) {
             event.preventDefault();
 
-            var username = $("input").val();
+            var username = $("input[name='username']").val();
+            includeEps = $("input[name='eps']").prop("checked");
+            includeSingles = $("input[name='singles']").prop("checked");
 
             lastFmApi.getUserInfo(username, function (data) {
 
@@ -207,8 +224,8 @@
                     $("input").prop('disabled', true);
                     $("button").prop('disabled', true);
                     $("button").text("Please wait...");
-                    $("button").addClass('hidden');
-                    $("input").addClass('hidden');
+                    $(".form-group").addClass('hidden');
+                    $(".checkbox").addClass('hidden');
 
                     app.getTopAlbums(username, 20, function (result) {
 

@@ -42,12 +42,17 @@
 
                     <h1 class="cover-heading">2015 Top 20 Albums</h1>
 
-                    <p class="lead">
-                        <input type="text" class="form-control" placeholder="Last.fm username"/>
-                        <div class="alert alert-danger fade hidden" role="alert">
-                        </div>
-                    </p>
+                    <div class="form-group">
+                        <input name="username" type="text" class="form-control" placeholder="Last.fm username"/>
+                    </div>
+                    <div class="checkbox">
+                        <label class="checkbox-inline"><input name="eps" type="checkbox">Include EPs</label>
+                        <label class="checkbox-inline"><input name="singles" type="checkbox" value="singles">Include singles</label>
+                    </div>
 
+                    <div class="alert alert-danger fade hidden" role="alert">
+                    </div>
+                    
                     <p id="status" class="lead">
 
                     </p>
@@ -61,9 +66,9 @@
 
                     </p>
 
-                    <p class="lead">
+                    <div class="form-group">
                         <button id="submit-button" type="submit" class="btn btn-primary">Submit</button>
-                    </p>
+                    </div>
                 </form>
 
                 <div id="analysis">
