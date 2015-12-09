@@ -1,5 +1,6 @@
 (function (app, $) {
 
+    var firebaseRef = new Firebase("https://sweltering-torch-4244.firebaseio.com/");
     var lastFmApi = LastFmApi;
     var spotifyApi = new SpotifyWebApi();
     var user = '';
@@ -239,6 +240,9 @@
 
                         $("form").addClass('hidden');
                         $("#analysis").addClass('hidden');
+
+                        var userRef = firebaseRef.child("users").child(username);
+                        userRef.set(result);
 
                     }, function (progress) {
                         $(".progress-bar").attr('style', 'width:' + (progress / 20) * 100 + '%;');

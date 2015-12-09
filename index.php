@@ -103,6 +103,7 @@
 <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
 <script type="text/javascript" src="bower_components/spotify-web-api-js/src/spotify-web-api.js"></script>
 <script type="text/javascript" src="assets/js/last-fm-api.js"></script>
+<script type="text/javascript" src="assets/js/firebase.js"></script>
 <script type="text/javascript" src="assets/js/app.js"></script>
 </body>
 </html>
