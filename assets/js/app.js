@@ -8,7 +8,7 @@
     var albumCount = 20;
     var page = 1;
     var pageLimit = 15;
-    var year = 2015;
+    var year = 2016;
     var includeEps = false;
     var includeSingles = false;
 
